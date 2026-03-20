@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # PHP + Apache web server
+  web:
+    build: .
+    container_name: limitless_web
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASS=rootpassword
+      - DB_NAME=limitless_db
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # MySQL database
+  db:
+    image: mysql:8.0
+    container_name: limitless_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: limitless_db
+    ports:
+      - "3307:3306"       # 3307 on host so it doesn't clash with XAMPP's 3306
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database.sql:/docker-entrypoint-initdb.d/database.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # phpMyAdmin (optional, nice to have)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: limitless_phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  db_data:
