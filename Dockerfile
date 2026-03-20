@@ -1,22 +1,18 @@
 FROM php:8.2-apache
 
-# Install mysqli extension
+RUN a2dismod mpm_event && a2enmod mpm_prefork
+
 RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
 
-# Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
-# Set working directory
 WORKDIR /var/www/html
 
-# Copy project files
 COPY . .
 
-# Set permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
-# Apache config to allow .htaccess overrides
 RUN echo '<Directory /var/www/html>\n\
     Options Indexes FollowSymLinks\n\
     AllowOverride All\n\
